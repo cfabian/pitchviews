@@ -1,6 +1,5 @@
 import boto3
 from boto3.dynamodb.conditions import Key, Attr
-import genres
 import json
 from time import sleep
 from sklearn.decomposition import LatentDirichletAllocation
