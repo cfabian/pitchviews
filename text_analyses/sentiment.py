@@ -9,6 +9,7 @@ from stop_words import get_stop_words
 from nltk.stem.porter import PorterStemmer
 from bs4 import BeautifulSoup
 from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
 
 def cleanHtml (html):
     soup = BeautifulSoup(html, 'html.parser')
@@ -38,6 +39,7 @@ while 'LastEvaluatedKey' in response:
           FilterExpression=Attr('genre').eq('Rock')
     )
     data.extend(response['Items'])
+    break
   except:
     print("sleeping...")
     sleep(30)
@@ -51,14 +53,12 @@ sentiment = []
 
 for d in data:
   b = cleanHtml(d['body']).lower()
-  review = TextBlob(b)
+  review = TextBlob(b, analyzer=NaiveBayesAnalyzer())
 
-  sentiment.append(review.sentiment.polarity)
+  sentiment.append(review.sentiment.classification)
 
-good_reviews = sum(i > 0.1 for i in sentiment)
-neutral_reviews = sum((i >= -.1 and i <= .1) for i in sentiment)
-bad_reviews = sum(i < -0.1 for i in sentiment)
+good_reviews = sum(i is 'pos' for i in sentiment)
+bad_reviews = sum(i is 'neg' for i in sentiment)
 
 print("Good reviews: ", good_reviews)
-print("Neutral reviews: ", neutral_reviews)
 print("Bad reviews: ", bad_reviews)
