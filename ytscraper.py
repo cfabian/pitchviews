@@ -8,7 +8,6 @@ from boto3.dynamodb.conditions import Key, Attr
 dynamodb = boto3.resource('dynamodb')
 
 def writeToDynamodb(key, url, viewCount):
-    print('starting')
     table = dynamodb.Table("pitchfork_reviews")
     # print(table.creation_date_time)
     table.update_item(
@@ -18,17 +17,17 @@ def writeToDynamodb(key, url, viewCount):
         UpdateExpression = 'SET ytUrl = :url, viewCount = :viewCount',
         ExpressionAttributeValues = {
             ':url': url,
-            'viewCount': viewCount
+            ':viewCount': viewCount
         }
     )
     
-    res = table.get_item(
-        Key = {
-            'artistNameAlbumName': key
-        }
-    )
-    item = res['Item']
-    print(item)
+    # res = table.get_item(
+    #     Key = {
+    #         'artistNameAlbumName': key
+    #     }
+    # )
+    # item = res['Item']
+    # print(item)
 
 def getViews(key, playlist):
     ytInfo = {}
@@ -58,14 +57,14 @@ def makeUrl(title):
     return url + newTitle + playlistTag
 
 def search(title):
-    print(makeUrl(title))
-    # res = req.get(makeUrl(title))
-    res = req.get('https://www.youtube.com/results?search_query=dog')
+    # print(makeUrl(title))
+    res = req.get(makeUrl(title))
+    # res = req.get('https://www.youtube.com/results?search_query=dog')
     if (res.ok):
         playlist = res.text[res.text.find("/playlist?list="):res.text.find("View full playlist") + 50]
         playlist = playlist[:playlist.find('"')]
         # print (playlist)
-        # getViews(title, playlist)
+        getViews(title, playlist)
     
     else:
         print("failed to find playlist")
@@ -73,23 +72,28 @@ def search(title):
         
 def readReviews():
     table = dynamodb.Table("pitchfork_reviews")
-    res = table.scan(ProjectionExpression="artistNameAlbumName")
+    res = table.scan(ProjectionExpression="viewCount, ytUrl, artistNameAlbumName")
     data = res['Items']
     
     # print(json.dumps(data, indent=4, separators=(',', ': ')))
     
     for obj in data:
-        for key, value in obj.items():
-            # print(value)
-            search(value)
+        if 'viewCount' not in obj or 'ytUrl' not in obj:
+            print(obj['artistNameAlbumName'])
+            search(obj['artistNameAlbumName'])
+            
+        # for key, value in obj.items():
+        #     print("{0}: {1}".format(key, value))
+            # search(value)
     
-    # while res.get('LastEvaluatedKey'):
-    #     res = table.scan(ExclusiveStartKey=res['LastEvaluatedKey'])
-    #     data.extend(res["Items"])
+    while res.get('LastEvaluatedKey'):
+        res = table.scan(ExclusiveStartKey=res['LastEvaluatedKey'], ProjectionExpression="viewCount, ytUrl, artistNameAlbumName")
+        data = res["Items"]
+        for obj in data:
+            if 'viewCount' not in obj or 'ytUrl' not in obj:
+                print(obj['artistNameAlbumName'])
+                search(obj['artistNameAlbumName'])
         
     # print(data)
         
 readReviews()
-    
-# title = "sun ra and his arkestra the magic city"
-# search(title)
