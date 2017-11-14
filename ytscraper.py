@@ -35,7 +35,7 @@ def getViews(key, playlist):
     print(url)
     res = req.get(url)
     if (res.ok):
-        viewCount = res.text[res.text.find("views")-12:res.text.find(" views")]
+        viewCount = res.text[res.text.find(" views<")-12:res.text.find(" views<")]
         n = re.search("\d", viewCount)
         if n:
             viewCount = viewCount[n.start():]
@@ -95,5 +95,27 @@ def readReviews():
                 search(obj['artistNameAlbumName'])
         
     # print(data)
+    
+# Used if the scraping has gone through but some viewcounts are broken
+def fixViews():
+    table = dynamodb.Table("pitchfork_reviews")
+    res = table.scan(ProjectionExpression="viewCount, ytUrl, artistNameAlbumName")
+    data = res['Items']
+    
+    # print(json.dumps(data, indent=4, separators=(',', ': ')))
+    
+    for obj in data:
+        if 'viewCount' not in obj or 'ytUrl' not in obj or not str(obj['viewCount']).isdigit():
+            print(obj['artistNameAlbumName'])
+            search(obj['artistNameAlbumName'])
+            
+    while res.get('LastEvaluatedKey'):
+        res = table.scan(ExclusiveStartKey=res['LastEvaluatedKey'], ProjectionExpression="viewCount, ytUrl, artistNameAlbumName")
+        data = res["Items"]
+        for obj in data:
+            if 'viewCount' not in obj or 'ytUrl' not in obj or not str(obj['viewCount']).isdigit():
+                print(obj['artistNameAlbumName'])
+                search(obj['artistNameAlbumName'])
         
 readReviews()
+# fixViews()
