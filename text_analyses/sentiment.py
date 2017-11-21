@@ -32,6 +32,8 @@ response = table.scan(
 
 data = []
 
+data.extend(response['Items'])
+
 while 'LastEvaluatedKey' in response:
   try:
     response = table.scan(
@@ -39,7 +41,6 @@ while 'LastEvaluatedKey' in response:
           FilterExpression=Attr('genre').eq('Rock')
     )
     data.extend(response['Items'])
-    break
   except:
     print("sleeping...")
     sleep(30)

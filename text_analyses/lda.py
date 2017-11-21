@@ -25,7 +25,7 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table("pitchfork_reviews")
 
 response = table.scan(
-        FilterExpression=Attr('rating').gt('8')
+        FilterExpression=Attr('rating').lt('11')
 )
 
 data = []
@@ -34,7 +34,7 @@ while 'LastEvaluatedKey' in response:
   try:
     response = table.scan(
           ExclusiveStartKey=response['LastEvaluatedKey'],
-          FilterExpression=Attr('rating').gt('8')
+          FilterExpression=Attr('rating').lt('11')
     )
     data.extend(response['Items'])
   except:
@@ -56,7 +56,7 @@ tf_vectorizer = CountVectorizer(max_df=0.95, min_df=2,
                                 max_features=10,
                                 stop_words='english')
 tf = tf_vectorizer.fit_transform(body)
-lda = LatentDirichletAllocation(n_topics=10, max_iter=5, learning_method='online', learning_offset=50, random_state=0)
+lda = LatentDirichletAllocation(n_topics=8, max_iter=50, learning_method='online', learning_offset=10, random_state=0)
 lda.fit(tf)
 
 print("\nTopics in LDA model:")
